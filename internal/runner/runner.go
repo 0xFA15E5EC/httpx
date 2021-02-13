@@ -173,6 +173,7 @@ func New(options *Options) (*Runner, error) {
 	scanopts.CSPProbe = options.CSPProbe
 	if options.RequestURI != "" {
 		scanopts.RequestURI = options.RequestURI
+		scanopts.RequestURI = strings.Replace(scanopts.RequestURI, "{UUID_TOKEN}", RandStringBytes(12), -1)
 	}
 	scanopts.OutputContentType = options.OutputContentType
 	scanopts.RequestBody = options.RequestBody
