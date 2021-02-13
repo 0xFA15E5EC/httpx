@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
+        "math/rand"
 
 	"github.com/logrusorgru/aurora"
 	"github.com/projectdiscovery/clistats"
@@ -44,6 +46,32 @@ type Runner struct {
 	stats    clistats.StatisticsClient
 }
 
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const (
+    letterIdxBits = 6                    // 6 bits to represent a letter index
+    letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+    letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+var src = rand.NewSource(time.Now().UnixNano())
+// RandStringBytes
+func RandStringBytes(n int) string {
+    b := make([]byte, n)
+    for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+        if remain == 0 {
+            cache, remain = src.Int63(), letterIdxMax
+        }
+        if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+            b[i] = letterBytes[idx]
+            i--
+        }
+        cache >>= letterIdxBits
+        remain--
+    }
+
+    return *(*string)(unsafe.Pointer(&b))
+}
+
+
 // New creates a new client for running enumeration process.
 func New(options *Options) (*Runner, error) {
 	runner := &Runner{
@@ -76,6 +104,9 @@ func New(options *Options) (*Runner, error) {
 		}
 		key = strings.TrimSpace(tokens[0])
 		value = strings.TrimSpace(tokens[1])
+		// 0xFA15E5EC's addition to replace a special string with a random value within each request header.
+                // Useful for SSRF or XSS canary inclusion in a custom header/cookie.
+                value = strings.Replace(value, "{UUID_TOKEN}", RandStringBytes(12), -1)
 		httpxOptions.CustomHeaders[key] = value
 	}
 
