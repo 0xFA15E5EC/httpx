@@ -173,6 +173,9 @@ func New(options *Options) (*Runner, error) {
 	scanopts.CSPProbe = options.CSPProbe
 	if options.RequestURI != "" {
 		scanopts.RequestURI = options.RequestURI
+		// 0xFA15E5EC's addition to replace a special string with a random value within each request header.
+		// useful for request paths that contain querystring values vulnerable to SSRF or for easily identifying
+		// external DNS/HTTP interaction
 		scanopts.RequestURI = strings.Replace(scanopts.RequestURI, "{UUID_TOKEN}", RandStringBytes(12), -1)
 	}
 	scanopts.OutputContentType = options.OutputContentType
